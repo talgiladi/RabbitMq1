@@ -5,6 +5,7 @@ namespace WebQueueModels
     public static class Settings
     {
         private const string _workingQueueName = "webhook_queue";
+        private const string _deadMessageQueue = "dlx_exchange";
         private static readonly IConfigurationRoot configuration;
         static Settings()
         {
@@ -23,6 +24,11 @@ namespace WebQueueModels
         public static string WorkingQueueName
         {
             get { return _workingQueueName; }
+        }
+
+        public static string GetDeadMessagesQueue()
+        {
+             return _deadMessageQueue; 
         }
 
         public static string QueueUri

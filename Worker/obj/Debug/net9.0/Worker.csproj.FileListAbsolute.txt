@@ -45,3 +45,6 @@ C:\Users\Public\temp\RabbitMqTest2\Worker\obj\Debug\net9.0\refint\Worker.dll
 C:\Users\Public\temp\RabbitMqTest2\Worker\obj\Debug\net9.0\Worker.pdb
 C:\Users\Public\temp\RabbitMqTest2\Worker\obj\Debug\net9.0\Worker.genruntimeconfig.cache
 C:\Users\Public\temp\RabbitMqTest2\Worker\obj\Debug\net9.0\ref\Worker.dll
+C:\Users\Public\temp\RabbitMqTest2\Worker\obj\Debug\net9.0\Worker.sourcelink.json
+C:\Users\Public\temp\RabbitMqTest2\Worker\bin\Debug\net9.0\WebQueueModels.dll
+C:\Users\Public\temp\RabbitMqTest2\Worker\bin\Debug\net9.0\WebQueueModels.pdb

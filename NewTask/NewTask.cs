@@ -1,43 +1,41 @@
-﻿using System.Text;
+﻿using Microsoft.Extensions.Configuration;
 using RabbitMQ.Client;
-using Microsoft.Extensions.Configuration.Json;
-using Microsoft.Extensions.Configuration;
-
-internal class Program
+using System.Text;
+namespace Queues
 {
-    private static int index;
-    private static void Main(string[] args)
+    internal class Program
     {
-        var configuration = new ConfigurationBuilder()
-            .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
-            .AddEnvironmentVariables()
-            .Build();
-        Console.WriteLine(configuration ==null ? "null" : configuration.ToString());
-        var rabbitMQUrl = configuration["RabbitMQUrl"];
-        Console.WriteLine(rabbitMQUrl);
-        var factory = new ConnectionFactory { HostName = rabbitMQUrl };
-        using var connection = factory.CreateConnection();
-        using var channel = connection.CreateModel();
-
-        channel.QueueDeclare(queue: "hello",
-                             durable: false,
-                             exclusive: false,
-                             autoDelete: false,
-                             arguments: null);
-        int index = 0;
-        while (true)
+        private static WebQueueModels.QueueManager? queueManager;
+        private static void Main()
         {
-            string message = $"#{index++} {DateTime.UtcNow}";
-            var body = Encoding.UTF8.GetBytes(message);
+            queueManager = new WebQueueModels.QueueManager();
+            var channel = queueManager.CreateMainQueue();
+           
+            int index = 0;
+            while (true)
+            {
+                string message = GetMessage($"#{index++} {Guid.NewGuid()}");
+                var body = Encoding.UTF8.GetBytes(message);
+                var properties = channel.CreateBasicProperties();
+                properties.Persistent = true;
+                channel.BasicPublish(exchange: string.Empty,
+                                    routingKey: WebQueueModels.Settings.WorkingQueueName,
+                                    basicProperties: properties,
+                                    body: body);
+                Console.WriteLine($" [x] Sent {message}");
+            }
 
-            channel.BasicPublish(exchange: string.Empty,
-                                routingKey: "hello",
-                                basicProperties: null,
-                                body: body);
-            Console.WriteLine($" [x] Sent {message}");
-            Thread.Sleep(4000);
         }
-       
+
+        static string GetMessage(string defaultMessage)
+        {
+            Console.WriteLine("Enter your message:");
+            var line = Console.ReadLine();
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                line = defaultMessage;
+            }
+            return line;
+        }
     }
 }

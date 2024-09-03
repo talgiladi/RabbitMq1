@@ -24,3 +24,6 @@ C:\Users\Public\temp\RabbitMqTest2\NewTask\bin\Debug\net9.0\Microsoft.Extensions
 C:\Users\Public\temp\RabbitMqTest2\NewTask\bin\Debug\net9.0\Microsoft.Extensions.FileProviders.Physical.dll
 C:\Users\Public\temp\RabbitMqTest2\NewTask\bin\Debug\net9.0\Microsoft.Extensions.FileSystemGlobbing.dll
 C:\Users\Public\temp\RabbitMqTest2\NewTask\bin\Debug\net9.0\Microsoft.Extensions.Primitives.dll
+C:\Users\Public\temp\RabbitMqTest2\NewTask\obj\Debug\net9.0\NewTask.sourcelink.json
+C:\Users\Public\temp\RabbitMqTest2\NewTask\bin\Debug\net9.0\WebQueueModels.dll
+C:\Users\Public\temp\RabbitMqTest2\NewTask\bin\Debug\net9.0\WebQueueModels.pdb
