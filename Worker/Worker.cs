@@ -23,12 +23,10 @@ namespace Queues
 
     public class QueueConsumerService : BackgroundService, IDisposable
     {
-        private const string x_dead_letter_exchange = "xxx1";
         private readonly IModel workingChannel;
         private IModel exchangeChannel;
         private readonly int MaxRetries = 3;
         private readonly int BaseDelay = 10;
-        private readonly string rabbitMQUrl;
         private readonly WebQueueModels.QueueManager queueManager;
         public QueueConsumerService()
         {
@@ -96,30 +94,20 @@ namespace Queues
                 var consumer = new EventingBasicConsumer(workingChannel);
                 consumer.Received += (model, ea) =>
                 {
-                    Console.WriteLine("got dead message");
-                    HandleMessageSafely(ea);
-                };
-                workingChannel.BasicConsume(queue: "dlx_queue", autoAck: false, consumer: consumer);
-            }
-
-            {
-                var consumer = new EventingBasicConsumer(workingChannel);
-                consumer.Received += (model, ea) =>
-                {
                     Console.WriteLine("got live message");
                     HandleMessageSafely(ea);
                 };
                 workingChannel.BasicConsume(queue: WebQueueModels.Settings.WorkingQueueName, autoAck: false, consumer: consumer);
             }
-            //{
-            //    var exchangeConsumer = new EventingBasicConsumer(exchangeChannel);
-            //    exchangeConsumer.Received += (model, ea) =>
-            //    {
-            //        Console.WriteLine("got exchange message");
-            //        HandleMessageSafely(ea);
-            //    };
-            //    exchangeChannel.BasicConsume(queue: ExchangeQueueName, autoAck: false, consumer: exchangeConsumer);
-            //}
+            {
+                var exchangeConsumer = new EventingBasicConsumer(workingChannel);
+                exchangeConsumer.Received += (model, ea) =>
+                {
+                    Console.WriteLine("got exchange message");
+                    HandleMessageSafely(ea);
+                };
+                workingChannel.BasicConsume(queue: "dlx_queue", autoAck: false, consumer: exchangeConsumer);
+            }
             return Task.CompletedTask;
         }
 
@@ -169,10 +157,9 @@ namespace Queues
             {
 
                 CreateRetryQueue(message, retries);
-
-
-                workingChannel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
             }
+
+            workingChannel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
         }
 
         private void CreateRetryQueue(string message, int retries)
@@ -182,17 +169,17 @@ namespace Queues
                 var body = Encoding.UTF8.GetBytes(message);
                 var delay = BaseDelay * (int)Math.Pow(2, retries);
                 delay *= 1000;
-                string queueName = "webhook_queue.retry.20000.dlx";// $"{WorkingQueueName}.retry.{delay}";
-                var factory = new ConnectionFactory { HostName = rabbitMQUrl };
+                string queueName = $"{WebQueueModels.Settings.WorkingQueueName}.retry.10000";// $"{WorkingQueueName}.retry.{delay}";
+                var factory = new ConnectionFactory { HostName = WebQueueModels.Settings.QueueUri };
                 var connection = factory.CreateConnection();
                 var channel = connection.CreateModel();
-                var arguments = new Dictionary<string, object>()
-                {
-                    { "x-dead-letter-exchange" , x_dead_letter_exchange},
-                    { "x-message-ttl" , delay},
-                    { "x-expires" , delay * 2},
-                    { "x-dead-letter-routing-key", x_dead_letter_exchange }
-                };
+                var arguments = new Dictionary<string, object>
+            {
+                { "x-dead-letter-exchange", "dlx_exchange" },
+                { "x-dead-letter-routing-key", "dlx_routing_key" },
+                { "x-message-ttl", 10000 } // TTL in milliseconds
+            };
+               
 
                 channel.QueueDeclare(queue: queueName,
                              durable: true,
@@ -206,9 +193,8 @@ namespace Queues
                 properties.Headers = new Dictionary<string, object> { { "x-retries", retries } };
                 properties.Persistent = true;
 
-                // channel.ExchangeBind(queueName, x_dead_letter_exchange, "");
 
-                channel.BasicPublish(exchange: x_dead_letter_exchange,
+                channel.BasicPublish(exchange: string.Empty,
                                     routingKey: queueName,
                                     basicProperties: properties,
                                     body: body);
