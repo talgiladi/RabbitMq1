@@ -13,7 +13,7 @@ internal class Program
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true)
             .AddEnvironmentVariables()
             .Build();
-        Console.WriteLine(configuration ==null? "null":configuration.ToString());
+        Console.WriteLine(configuration ==null ? "null" : configuration.ToString());
         var rabbitMQUrl = configuration["RabbitMQUrl"];
         Console.WriteLine(rabbitMQUrl);
         var factory = new ConnectionFactory { HostName = rabbitMQUrl };
@@ -38,7 +38,6 @@ internal class Program
             Console.WriteLine($" [x] Sent {message}");
             Thread.Sleep(4000);
         }
-        Console.WriteLine(" Press [enter] to exit.");
-        Console.ReadLine();
+       
     }
 }
