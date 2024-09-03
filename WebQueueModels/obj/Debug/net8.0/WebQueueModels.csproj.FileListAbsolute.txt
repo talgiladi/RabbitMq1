@@ -1,0 +1,13 @@
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.csproj.AssemblyReference.cache
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.AssemblyInfoInputs.cache
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.AssemblyInfo.cs
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.csproj.CoreCompileInputs.cache
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.sourcelink.json
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\bin\Debug\net8.0\WebQueueModels.deps.json
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\bin\Debug\net8.0\WebQueueModels.dll
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\bin\Debug\net8.0\WebQueueModels.pdb
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.dll
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\refint\WebQueueModels.dll
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\WebQueueModels.pdb
+C:\Users\Public\temp\RabbitMqTest2\WebQueueModels\obj\Debug\net8.0\ref\WebQueueModels.dll
