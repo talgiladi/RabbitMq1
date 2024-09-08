@@ -26,7 +26,7 @@ namespace Queues
         private readonly IModel workingChannel;
         private IModel exchangeChannel;
         private readonly int MaxRetries = 3;
-        private readonly int BaseDelay = 10;
+        
         private readonly WebQueueModels.QueueManager queueManager;
         public QueueConsumerService()
         {
@@ -167,9 +167,9 @@ namespace Queues
             try
             {
                 var body = Encoding.UTF8.GetBytes(message);
-                var delay = BaseDelay * (int)Math.Pow(2, retries);
-                delay *= 1000;
-                string queueName = $"{WebQueueModels.Settings.WorkingQueueName}.retry.10000";// $"{WorkingQueueName}.retry.{delay}";
+                var delay = WebQueueModels.QueueManager.GetDelay(retries);
+               
+                string queueName = $"{WebQueueModels.Settings.WorkingQueueName}.retry.{delay}";// $"{WorkingQueueName}.retry.{delay}";
                 var factory = new ConnectionFactory { HostName = WebQueueModels.Settings.QueueUri };
                 var connection = factory.CreateConnection();
                 var channel = connection.CreateModel();
@@ -177,7 +177,7 @@ namespace Queues
             {
                 { "x-dead-letter-exchange", "dlx_exchange" },
                 { "x-dead-letter-routing-key", "dlx_routing_key" },
-                { "x-message-ttl", 10000 } // TTL in milliseconds
+                { "x-message-ttl", delay } // TTL in milliseconds
             };
                
 

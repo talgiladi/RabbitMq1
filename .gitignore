@@ -4,3 +4,8 @@
 
 /.vs
 /NewTask/.vs/NewTask
+
+*.dll
+*.exe
+*.pdb
+*.cache

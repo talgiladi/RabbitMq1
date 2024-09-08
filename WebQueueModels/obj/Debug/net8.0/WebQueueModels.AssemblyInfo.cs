@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WebQueueModels")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+685f4f073c920dee50d56c46dc03b46859907488")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+60002b670ffbd08b38b6d8d08db317e45403edfa")]
 [assembly: System.Reflection.AssemblyProductAttribute("WebQueueModels")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WebQueueModels")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

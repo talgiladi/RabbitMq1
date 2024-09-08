@@ -27,22 +27,27 @@ namespace WebQueueModels
                                  arguments: null);
 
             //create retries queues that use the dead queue
-
-
-            // Declare the original queue with DLX settings
-            var arguments = new Dictionary<string, object>
+            for (var i = 1; i < 4; i++)
             {
-                { "x-dead-letter-exchange", "dlx_exchange" },
-                { "x-dead-letter-routing-key", "dlx_routing_key" },
-                { "x-message-ttl", 10000 } // TTL in milliseconds
-            };
-            channel.QueueDeclare(queue: $"{WebQueueModels.Settings.WorkingQueueName}.retry.10000",
-                                 durable: true,
-                                 exclusive: false,
-                                 autoDelete: false,
-                                 arguments: arguments);
-         
+                var delay = GetDelay(i);
+                var arguments = new Dictionary<string, object>
+                {
+                    { "x-dead-letter-exchange", "dlx_exchange" },
+                    { "x-dead-letter-routing-key", "dlx_routing_key" },
+                    { "x-message-ttl", delay } // TTL in milliseconds
+                };
+                channel.QueueDeclare(queue: $"{WebQueueModels.Settings.WorkingQueueName}.retry.{delay}",
+                                     durable: true,
+                                     exclusive: false,
+                                     autoDelete: false,
+                                     arguments: arguments);
+            }
             return channel;
+        }
+
+        public static int GetDelay(int retry)
+        {
+            return (int)Math.Pow(2, retry + 1) * 1000;
         }
 
         public void Dispose()
