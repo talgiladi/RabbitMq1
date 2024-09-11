@@ -119,13 +119,13 @@ namespace Queues
             try
             {
                 var id = Guid.NewGuid().ToString();
-                Console.WriteLine($" [x] Received {message}. {id}");
+                Console.WriteLine($" [x] Received . {id}");
                 if (message.Contains("crash"))
                 {
                     throw new Exception("crashed!");
                 }
                 workingChannel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
-                Console.WriteLine($" [x] Done {message}. {id}");
+                Console.WriteLine($" [x] Done . {id}");
             }
             catch (Exception e1)
             {
