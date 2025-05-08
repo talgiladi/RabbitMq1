@@ -23,16 +23,20 @@ namespace Queues
 
     public class QueueConsumerService : BackgroundService, IDisposable
     {
-        private readonly IModel workingChannel;
-        private IModel exchangeChannel;
+        private readonly IChannel workingChannel;
+        //private IChannel exchangeChannel;
         private readonly int MaxRetries = 3;
         
         private readonly WebQueueModels.QueueManager queueManager;
+        
+        /// <summary>
+        /// 
+        /// </summary>
         public QueueConsumerService()
         {
             queueManager = new WebQueueModels.QueueManager();
-            workingChannel = queueManager.CreateMainQueue();
-            workingChannel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+            workingChannel = queueManager.CreateMainQueue().Result;
+            workingChannel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
 
             //{
             //    var factory = new ConnectionFactory { HostName = rabbitMQUrl };
@@ -91,27 +95,29 @@ namespace Queues
         protected override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             {
-                var consumer = new EventingBasicConsumer(workingChannel);
-                consumer.Received += (model, ea) =>
+                var consumer = new AsyncEventingBasicConsumer(workingChannel);
+                
+                consumer.ReceivedAsync += (model, ea) =>
                 {
                     Console.WriteLine("got live message");
-                    HandleMessageSafely(ea);
+                    return HandleMessageSafely(ea);
                 };
-                workingChannel.BasicConsume(queue: WebQueueModels.Settings.WorkingQueueName, autoAck: false, consumer: consumer);
+                workingChannel.BasicConsumeAsync(queue: WebQueueModels.Settings.WorkingQueueName, autoAck: false, consumer: consumer);
             }
             {
-                var exchangeConsumer = new EventingBasicConsumer(workingChannel);
-                exchangeConsumer.Received += (model, ea) =>
+                var exchangeConsumer = new AsyncEventingBasicConsumer(workingChannel);
+                exchangeConsumer.ReceivedAsync += (model, ea) =>
                 {
                     Console.WriteLine("got exchange message");
-                    HandleMessageSafely(ea);
+                    return HandleMessageSafely(ea);
                 };
-                workingChannel.BasicConsume(queue: "dlx_queue", autoAck: false, consumer: exchangeConsumer);
+                workingChannel.BasicConsumeAsync(queue: "dlx_queue", autoAck: false, consumer: exchangeConsumer);
             }
             return Task.CompletedTask;
         }
 
-        private void HandleMessageSafely(BasicDeliverEventArgs ea)
+
+        private async Task HandleMessageSafely(BasicDeliverEventArgs ea)
         {
             var body = ea.Body.ToArray();
             var message = Encoding.UTF8.GetString(body);
@@ -124,26 +130,29 @@ namespace Queues
                 {
                     throw new Exception("crashed!");
                 }
-                workingChannel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
                 Console.WriteLine($" [x] Done . {id}");
+                await workingChannel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
+                
             }
             catch (Exception e1)
             {
                 Console.WriteLine($"exception: {e1.Message}");
-                RetryMessage(message, ea);
+                await RetryMessage(message, ea);
             }
         }
 
         private static int DeathCount(BasicDeliverEventArgs ea)
         {
-            var retries = ea.BasicProperties.Headers?.ContainsKey("x-retries") == true
-                   ? (int)ea.BasicProperties.Headers["x-retries"]
-                   : 0;
+            if(ea.BasicProperties.Headers == null)
+            {
+                return 0;
+            }
+            var retries = ea.BasicProperties.Headers.TryGetValue("x-retries", out object? value) && value!=null && value is int v ? v : 0;
 
             return retries;
         }
 
-        private void RetryMessage(string message, BasicDeliverEventArgs ea)
+        private async Task RetryMessage(string message, BasicDeliverEventArgs ea)
         {
             var retries = DeathCount(ea);
             Console.WriteLine($"retries: {retries}");
@@ -156,13 +165,13 @@ namespace Queues
             else
             {
 
-                CreateRetryQueue(message, retries);
+                await CreateRetryQueue(message, retries);
             }
 
-            workingChannel.BasicAck(deliveryTag: ea.DeliveryTag, multiple: false);
+            await workingChannel.BasicAckAsync(deliveryTag: ea.DeliveryTag, multiple: false);
         }
 
-        private void CreateRetryQueue(string message, int retries)
+        private async Task CreateRetryQueue(string message, int retries)
         {
             try
             {
@@ -171,9 +180,9 @@ namespace Queues
                
                 string queueName = $"{WebQueueModels.Settings.WorkingQueueName}.retry.{delay}";// $"{WorkingQueueName}.retry.{delay}";
                 var factory = new ConnectionFactory { HostName = WebQueueModels.Settings.QueueUri };
-                var connection = factory.CreateConnection();
-                var channel = connection.CreateModel();
-                var arguments = new Dictionary<string, object>
+                var connection = factory.CreateConnectionAsync().Result;
+                var channel = connection.CreateChannelAsync().Result;
+                var arguments = new Dictionary<string, object?>
             {
                 { "x-dead-letter-exchange", "dlx_exchange" },
                 { "x-dead-letter-routing-key", "dlx_routing_key" },
@@ -181,21 +190,28 @@ namespace Queues
             };
                
 
-                channel.QueueDeclare(queue: queueName,
+                await channel.QueueDeclareAsync(queue: queueName,
                              durable: true,
                              exclusive: false,
                              autoDelete: false,
                              arguments: arguments);
-                channel.BasicQos(prefetchSize: 0, prefetchCount: 1, global: false);
+                await channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false);
                 Console.WriteLine($"created queue {queueName}");
-                var properties = channel.CreateBasicProperties();
+                var properties = new RabbitMQ.Client.BasicProperties
+                {
+                    ContentType = "application/json",
+                    DeliveryMode =  DeliveryModes.Persistent,
+                    CorrelationId = Guid.NewGuid().ToString(),
+                    // other properties you need
+                };
                 properties.Expiration = delay.ToString();
-                properties.Headers = new Dictionary<string, object> { { "x-retries", retries } };
+                properties.Headers = new Dictionary<string, object?> { { "x-retries", retries } };
                 properties.Persistent = true;
 
 
-                channel.BasicPublish(exchange: string.Empty,
+                await channel.BasicPublishAsync(exchange: string.Empty,
                                     routingKey: queueName,
+                                    mandatory: true,
                                     basicProperties: properties,
                                     body: body);
             }
@@ -218,15 +234,17 @@ namespace Queues
         {
             try
             {
-                workingChannel?.Close();
+                workingChannel?.CloseAsync();
+                workingChannel?.Dispose();
             }
             catch { }
 
-            try
-            {
-                exchangeChannel?.Close();
-            }
-            catch { }
+            //try
+            //{
+            //    exchangeChannel?.CloseAsync();
+            //    exchangeChannel?.Dispose();
+            //}
+            //catch { }
 
             try
             {

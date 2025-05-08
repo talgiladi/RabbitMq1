@@ -39,7 +39,8 @@ namespace WebQueueModels
                 Console.WriteLine($"RabbitMQUrl: {uri}");
                 if (uri == null)
                 {
-                    throw new Exception($"please set the 'RabbitMQUrl' value in config");
+                    uri = "localhost";
+                    //throw new Exception($"please set the 'RabbitMQUrl' value in config");
                 }
 
                 return uri;

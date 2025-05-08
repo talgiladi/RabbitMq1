@@ -5,22 +5,22 @@ namespace WebQueueModels
     public class QueueManager : IDisposable
     {
         private IConnection? connection;
-        private IModel? channel;
-        public IModel CreateMainQueue()
+        private IChannel? channel;
+        public async Task<IChannel> CreateMainQueue()
         {
             var rabbitMQUrl = WebQueueModels.Settings.QueueUri;
 
             var factory = new ConnectionFactory { HostName = rabbitMQUrl };
-            connection = factory.CreateConnection();
-            channel = connection.CreateModel();
+            connection = await factory.CreateConnectionAsync();
+            channel = await connection.CreateChannelAsync();
 
             //create main queue which is also the dead queue
-            channel.ExchangeDeclare("dlx_exchange", ExchangeType.Direct);
-            channel.QueueDeclare("dlx_queue", true, false, false, null);
-            channel.QueueBind("dlx_queue", "dlx_exchange", "dlx_routing_key");
+            await channel.ExchangeDeclareAsync("dlx_exchange", ExchangeType.Direct);
+            await channel.QueueDeclareAsync("dlx_queue", true, false, false, null);
+            await channel.QueueBindAsync("dlx_queue", "dlx_exchange", "dlx_routing_key");
 
 
-            channel.QueueDeclare(queue: WebQueueModels.Settings.WorkingQueueName,
+            await channel.QueueDeclareAsync(queue: WebQueueModels.Settings.WorkingQueueName,
                                  durable: true,
                                  exclusive: false,
                                  autoDelete: false,
@@ -30,13 +30,13 @@ namespace WebQueueModels
             for (var i = 1; i < 4; i++)
             {
                 var delay = GetDelay(i);
-                var arguments = new Dictionary<string, object>
+                var arguments = new Dictionary<string, object?>
                 {
                     { "x-dead-letter-exchange", "dlx_exchange" },
                     { "x-dead-letter-routing-key", "dlx_routing_key" },
                     { "x-message-ttl", delay } // TTL in milliseconds
                 };
-                channel.QueueDeclare(queue: $"{WebQueueModels.Settings.WorkingQueueName}.retry.{delay}",
+                await channel.QueueDeclareAsync(queue: $"{WebQueueModels.Settings.WorkingQueueName}.retry.{delay}",
                                      durable: true,
                                      exclusive: false,
                                      autoDelete: false,
